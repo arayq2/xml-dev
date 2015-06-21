@@ -1,2 +1,4 @@
 # xml-dev
-xml related projects, typically using the pugixml parser
+XML related projects, typically using the pugixml parser (the ./pugixml directory has v1.2).
+
+XpMatch also needs libboost_program_options. (Tested with v1.49.0.)
