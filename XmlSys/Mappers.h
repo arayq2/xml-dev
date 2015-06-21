@@ -37,6 +37,7 @@ namespace XmlSys
         AgentMapper(XpathAgent const& agent, Target& target)
         : agent_(agent)
         , target_(target)
+        , inserter_(target_)
         {}
 
         using Methods = TargetMethods<Target>; 
@@ -47,11 +48,10 @@ namespace XmlSys
             using Document = Document<Throw>;
             try
             {
-                Document            _doc(input);
-                Inserter            _inserter(target_);
-                
+                Document        _doc(input);
+
                 Methods::label( target_, label );
-                if ( _doc.into_list( agent_, _inserter ) == 0 )
+                if ( _doc.into_list( agent_, inserter_ ) == 0 )
                 {
                     Methods::no_data( target_ );
                 }
@@ -90,7 +90,7 @@ namespace XmlSys
             
         private:
             Target&    target_;
-        };
+        }                   inserter_;
     };
     
     template<typename Target, typename ErrorPolicy = LoadError>
