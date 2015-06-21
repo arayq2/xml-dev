@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <iterator>
 
     /**
      * Mappers.h.
@@ -37,13 +38,13 @@ namespace XmlSys
         : agent_(agent)
         , target_(target)
         {}
+
+        using Methods = TargetMethods<Target>; 
         
         bool operator() ( std::istream& input, std::string const& label )
         {
             using Throw = DocBase::Throw;
             using Document = Document<Throw>;
-            using Methods = TargetMethods<Target>; 
-            using Inserter = typename TargetMethods<Target>::Inserter;
             try
             {
                 Document            _doc(input);
@@ -54,6 +55,7 @@ namespace XmlSys
                 {
                     Methods::no_data( target_ );
                 }
+                Methods::end( target_ );
                 return true;
             }
             catch ( Throw& ex )
@@ -66,6 +68,29 @@ namespace XmlSys
     private:
         XpathAgent const    agent_;
         Target&             target_;
+        // adapter for std::transform 
+        class Inserter
+        : public std::iterator<std::output_iterator_tag, void, void, void, void >
+        {
+        public:
+            Inserter(Target& target)
+            : target_(target)
+            {}
+            
+            Inserter& operator* () { return *this; }
+            Inserter& operator++ () { return *this; }
+            Inserter& operator++ (int) { return *this; }
+            
+            template<typename T>
+            Inserter& operator= ( T& item ) 
+            {
+                Methods::item( target_, item );
+                return *this; 
+            }
+            
+        private:
+            Target&    target_;
+        };
     };
     
     template<typename Target, typename ErrorPolicy = LoadError>

@@ -2,7 +2,6 @@
 #pragma once
 
 #include "Utility/LineOutput.h"
-#include "Utility/Iterable.h"
 #include "XmlSys/TargetMethods.h"
 
     /**
@@ -14,29 +13,28 @@ namespace XmlSys
     template<>
     struct TargetMethods<Utility::PrefixedOutput>
     {
-        using Inserter = Utility::Iterable<Utility::PrefixedOutput>;
-
         static void label( Utility::PrefixedOutput& output, std::string const& label )
         {
-            output( label );
+            output.source( label );
         }
 
+         static void item( Utility::PrefixedOutput& output, std::string const& item )
+        {
+            output( item );
+        }
+        
         static void no_data( Utility::PrefixedOutput& output )
         {
             output();
         }
         
         static void end( Utility::PrefixedOutput& output )
-        {
-            output();
-        }
+        {}
     };
 
     template<>
     struct TargetMethods<Utility::DelimitedOutput>
     {
-        using Inserter = Utility::Iterable<Utility::DelimitedOutput>;
-
         static void label( Utility::DelimitedOutput& output, std::string const& label )
         {
             output( label, true );
@@ -61,8 +59,6 @@ namespace XmlSys
     template<>
     struct TargetMethods<Utility::QuotedOutput>
     {
-        using Inserter = Utility::Iterable<Utility::QuotedOutput>;
-
         static void label( Utility::QuotedOutput& output, std::string const& label )
         {
             output( label, true );
