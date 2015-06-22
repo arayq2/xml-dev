@@ -45,9 +45,9 @@ per line.
 
 In "table" mode, it evaluates a set of expressions relative to every 
 instance of an initial context (which defaults to the document root), 
-and prints only the first evaluation of each expression, thus 
-producing output in a flat file format.  For columnar fidelity, empty 
-strings are output when expressions are not matched at all.
+and prints only the first evaluation of each expression, to produce  
+output in a flat file format.  For columnar fidelity, empty strings 
+are output when expressions are not matched at all.
 
 The "column" expressions can be specified in two ways: using the -c 
 option (repeated, if needed) with an argument; or using the -t option 
@@ -57,10 +57,20 @@ will be output in a header row; or just '<expression>', in which case
 the header row will have a synthesized title of the form '[N]' where 
 N is the column number.
 
-XML files to be processed can be specified as command line arguments, 
-or passed in through STDIN, one name per line.  The -d option saves 
-typing by specifying the directory relative to which the file names 
-will be interpreted as file paths. 
+XML files to be processed can be specified as command line arguments;
+or as the contents of a file, one name per line, with the -l option; 
+or be passed in through STDIN, one name per line.  To save typing, the 
+-d option can specify a directory relative to which the file names will 
+be interpreted as file paths. 
+
+The Xpath expressions handled are not fully general.  In particular, 
+disjunctions of the form this-element-text-or-that-attribute-value 
+are NOT supported.
+
+Also, XML namespaces are not recognized, as the underlying parsing 
+engine (pugixml) does not support them in the version used.  Some may 
+deem this a flaw or even a bug; I consider it a feature.
 
 
- 
+
+
