@@ -155,9 +155,23 @@ namespace XmlSys
             
             using Methods = TargetMethods<Target>;
 
+            // used to generate header row
+            template<typename Iterator>
+            void operator() ( Iterator begin, Iterator const end ) const
+            {
+                if ( begin != end )
+                {
+                    Methods::label( target_, *begin );
+                    while ( ++begin != end )
+                    {
+                        Methods::item( target_, *begin );
+                    }
+                }
+            }
+
             void header() const
             {
-                agents_.headers( target_ );
+                agents_.headers( *this );
                 Methods::end( target_ );
             }
             
