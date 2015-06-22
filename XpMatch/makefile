@@ -6,7 +6,7 @@ LIBS=-lboost_program_options
 
 VPATH=../Utility:../XmlSys:../pugixml
 
-UTILITY=FileListProcessor.h Iterable.h LineOutput.h
+UTILITY=FileListProcessor.h LineOutput.h
 XMLSYS=XpathAgent.h XmlDoc.h AgentSet.h TargetMethods.h Mappers.h
 HEADERS=$(UTILITY) $(XMLSYS)
 
