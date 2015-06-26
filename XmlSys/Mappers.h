@@ -28,6 +28,61 @@ namespace XmlSys
                 std::cerr << msg << std::endl;
             }
         };
+        
+        template<typename Target>
+        class Writer
+        {
+        public:
+            using Methods = TargetMethods<Target>;
+ 
+            Writer(Target& target, std::string const& label)
+            : target_(target)
+            {
+                Methods::label( target_, label );
+            }
+            
+            ~Writer()
+            {
+                Methods::end( target_ );
+            }
+            
+            void operator() ( std::string const& item ) const
+            {
+                Methods::item( target_, item );
+            }
+            
+            void operator() () const
+            {
+                Methods::no_data( target_ );
+            }
+        
+        private:
+            Target&     target_;        
+        };
+
+        template<typename Writer>
+        class Inserter
+        : public std::iterator<std::output_iterator_tag, void, void, void, void >
+        {
+        public:
+            Inserter(Writer& writer)
+            : writer_(writer)
+            {}
+            
+            Inserter& operator* () { return *this; }
+            Inserter& operator++ () { return *this; }
+            Inserter& operator++ (int) { return *this; }
+            
+            template<typename T>
+            Inserter& operator= ( T& item )
+            {
+                writer_( item );
+                return *this; 
+            }
+            
+        private:
+            Writer&    writer_;
+        };
     }
     
     template<typename Target, typename ErrorPolicy = LoadError>
@@ -37,25 +92,23 @@ namespace XmlSys
         AgentMapper(XpathAgent const& agent, Target& target)
         : agent_(agent)
         , target_(target)
-        , inserter_(target_)
         {}
 
-        using Methods = TargetMethods<Target>; 
-        
         bool operator() ( std::istream& input, std::string const& label )
         {
             using Throw = DocBase::Throw;
             using Document = Document<Throw>;
+            using Inserter = Inserter<Writer<Target> >;
             try
             {
                 Document        _doc(input);
+                Writer<Target>  _writer(target_, label);
+                Inserter        _inserter(_writer);
 
-                Methods::label( target_, label );
-                if ( _doc.into_list( agent_, inserter_ ) == 0 )
+                if ( _doc.into_list( agent_, _inserter ) == 0 )
                 {
-                    Methods::no_data( target_ );
+                    _writer();
                 }
-                Methods::end( target_ );
                 return true;
             }
             catch ( Throw& ex )
@@ -69,28 +122,6 @@ namespace XmlSys
         XpathAgent const    agent_;
         Target&             target_;
         // adapter for std::transform 
-        class Inserter
-        : public std::iterator<std::output_iterator_tag, void, void, void, void >
-        {
-        public:
-            Inserter(Target& target)
-            : target_(target)
-            {}
-            
-            Inserter& operator* () { return *this; }
-            Inserter& operator++ () { return *this; }
-            Inserter& operator++ (int) { return *this; }
-            
-            template<typename T>
-            Inserter& operator= ( T& item ) 
-            {
-                Methods::item( target_, item );
-                return *this; 
-            }
-            
-        private:
-            Target&    target_;
-        }                   inserter_;
     };
     
     template<typename Target, typename ErrorPolicy = LoadError>
@@ -153,18 +184,16 @@ namespace XmlSys
             , target_(target)
             {}
             
-            using Methods = TargetMethods<Target>;
-
             // used to generate header row
             template<typename Iterator>
             void operator() ( Iterator begin, Iterator const end ) const
             {
                 if ( begin != end )
                 {
-                    Methods::label( target_, *begin );
+                    Writer<Target>      _writer(target_, *begin);
                     while ( ++begin != end )
                     {
-                        Methods::item( target_, *begin );
+                        _writer( *begin );
                     }
                 }
             }
@@ -172,28 +201,21 @@ namespace XmlSys
             void header() const
             {
                 agents_.headers( *this );
-                Methods::end( target_ );
             }
             
-            void operator() ( std::string const& item ) const
-            {
-                Methods::item( target_, item );
-            }
-
             void operator() ( Xml_Node const& node, std::string const& label ) const
             {
-                auto    _lambda([&]( XpathAgent const& agent ) -> void 
+                Writer<Target>  _writer(target_, label);
+                auto            _lambda([&]( XpathAgent const& agent ) -> void 
                 {
                     // this XpathAgent interface selects at most one value. 
-                    if ( !agent.value( node, *this ) )
+                    if ( !agent.value( node, _writer ) )
                     {
-                        Methods::no_data( target_ );
+                        _writer(); // no data
                     }
                 });
 
-                Methods::label( target_, label );
                 agents_.apply( _lambda );
-                Methods::end( target_ );
             }
             
             AgentSet const&     agents_;
