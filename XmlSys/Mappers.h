@@ -64,9 +64,8 @@ namespace XmlSys
             Target&     target_;        
         };
 
-        
         /**
-         * Inserter.  Adapter for algorithms such as std::transform.
+         * Inserter.  (Minimal) adapter for algorithms such as std::transform.
          */
         template<typename Writer>
         class Inserter
@@ -77,8 +76,8 @@ namespace XmlSys
             : writer_(writer)
             {}
             
-            Inserter& operator* () { return *this; }
-            Inserter& operator++ () { return *this; }
+            Inserter& operator*  ()    { return *this; }
+            Inserter& operator++ ()    { return *this; }
             Inserter& operator++ (int) { return *this; }
             
             template<typename T>
@@ -91,6 +90,33 @@ namespace XmlSys
         private:
             Writer&    writer_;
         };
+
+        template<typename ErrorPolicy = LoadError>
+        class SimpleLoader
+        {
+        public:
+            SimpleLoader(std::string const& label)
+            : label_(label)
+            {}
+            
+            template<typename Handler>
+            bool operator() ( std::istream& input, Handler const& handler ) const
+            {
+                try
+                {
+                    handler( XmlDoc(input) );
+                    return true;
+                }
+                catch ( DocBase::Throw& ex )
+                {
+                    ErrorPolicy().on_error( label_ + ": " + ex.what() );
+                    return false;
+                }
+            }
+        
+        private:
+            std::string const   label_;
+        };
     }
     
     template<typename Target, typename ErrorPolicy = LoadError>
@@ -102,26 +128,20 @@ namespace XmlSys
         , target_(target)
         {}
 
+        using Loader = SimpleLoader<ErrorPolicy>;
+
         bool operator() ( std::istream& input, std::string const& label )
         {
-            using Throw = DocBase::Throw;
-            using Document = Document<Throw>;
             using Inserter = Inserter<Writer<Target> >;
-            try
+
+            return Loader(label)( input, [&]( XmlDoc const& doc ) -> void 
             {
-                Document            _doc(input);
                 Writer<Target>      _writer(target_, label);
-                if ( _doc.into_list( agent_, Inserter(_writer) ) == 0 )
+                if ( doc.into_list( agent_, Inserter(_writer) ) == 0 )
                 {
                     _writer(); // no data
                 }
-                return true;
-            }
-            catch ( Throw& ex )
-            {
-                ErrorPolicy().on_error( label + ": " + ex.what() );
-                return false;
-            }
+            } );
         }
             
     private:
@@ -143,38 +163,22 @@ namespace XmlSys
             return *this;
         }
         
+        using Loader = SimpleLoader<ErrorPolicy>;
+
         bool operator() ( std::istream& input, std::string const& label, std::string const& context ) const
         {
-            using Throw = DocBase::Throw;
-            using Document = Document<Throw>;
-            try
+            return Loader(label)( input, [&]( XmlDoc const& doc ) -> void 
             {
-                using namespace std::placeholders;
-                Document(input).apply( context, std::bind( mapper_, _1, label ) );
-                return true;
-            }
-            catch ( Throw& ex )
-            {
-                ErrorPolicy().on_error( label + ": " + ex.what() );
-                return false;
-            }
+                doc.apply( context, std::bind( mapper_, std::placeholders::_1, label ) );
+            } );
         }
         
         bool operator() ( std::istream& input, std::string const& label ) const
         {
-            using Throw = DocBase::Throw;
-            using Document = Document<Throw>;
-            try
+            return Loader(label)( input, [&]( XmlDoc const& doc ) -> void
             {
-                using namespace std::placeholders;
-                Document(input).process_root( std::bind( mapper_, _1, label ) );
-                return true;
-            }
-            catch ( Throw& ex )
-            {
-                ErrorPolicy().on_error( label + ": " + ex.what() );
-                return false;
-            }
+                doc.process_root( std::bind( mapper_, std::placeholders::_1, label ) );
+            } );
         }
         
     private:

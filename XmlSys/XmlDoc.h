@@ -241,6 +241,8 @@ namespace XmlSys
         Xml_Node    root_;
     };
     
+    typedef Document<DocBase::Throw>    XmlDoc;
+    
 } // namespace XmlSys
 
 template <typename T>
