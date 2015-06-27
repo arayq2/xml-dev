@@ -29,6 +29,10 @@ namespace XmlSys
             }
         };
         
+        /**
+         * Writer.  Local class to encapsulate TargetMethods and 
+         * pair "begin, end" operations in RAII fashion.
+         */
         template<typename Target>
         class Writer
         {
@@ -60,6 +64,10 @@ namespace XmlSys
             Target&     target_;        
         };
 
+        
+        /**
+         * Inserter.  Adapter for algorithms such as std::transform.
+         */
         template<typename Writer>
         class Inserter
         : public std::iterator<std::output_iterator_tag, void, void, void, void >
@@ -101,13 +109,11 @@ namespace XmlSys
             using Inserter = Inserter<Writer<Target> >;
             try
             {
-                Document        _doc(input);
-                Writer<Target>  _writer(target_, label);
-                Inserter        _inserter(_writer);
-
-                if ( _doc.into_list( agent_, _inserter ) == 0 )
+                Document            _doc(input);
+                Writer<Target>      _writer(target_, label);
+                if ( _doc.into_list( agent_, Inserter(_writer) ) == 0 )
                 {
-                    _writer();
+                    _writer(); // no data
                 }
                 return true;
             }
@@ -121,7 +127,6 @@ namespace XmlSys
     private:
         XpathAgent const    agent_;
         Target&             target_;
-        // adapter for std::transform 
     };
     
     template<typename Target, typename ErrorPolicy = LoadError>
@@ -145,9 +150,7 @@ namespace XmlSys
             try
             {
                 using namespace std::placeholders;
-                auto    _lambda(std::bind( mapper_, _1, label ));
-                
-                Document(input).apply( context, _lambda );
+                Document(input).apply( context, std::bind( mapper_, _1, label ) );
                 return true;
             }
             catch ( Throw& ex )
@@ -164,9 +167,7 @@ namespace XmlSys
             try
             {
                 using namespace std::placeholders;
-                auto    _lambda(std::bind( mapper_, _1, label ));
-                
-                Document(input).process_root( _lambda );
+                Document(input).process_root( std::bind( mapper_, _1, label ) );
                 return true;
             }
             catch ( Throw& ex )
@@ -206,16 +207,14 @@ namespace XmlSys
             void operator() ( Xml_Node const& node, std::string const& label ) const
             {
                 Writer<Target>  _writer(target_, label);
-                auto            _lambda([&]( XpathAgent const& agent ) -> void 
+                agents_.apply( [&]( XpathAgent const& agent ) -> void 
                 {
                     // this XpathAgent interface selects at most one value. 
                     if ( !agent.value( node, _writer ) )
                     {
                         _writer(); // no data
                     }
-                });
-
-                agents_.apply( _lambda );
+                } );
             }
             
             AgentSet const&     agents_;

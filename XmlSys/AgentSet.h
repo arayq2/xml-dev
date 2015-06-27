@@ -153,6 +153,16 @@ namespace XmlSys
             return agents_.size();
         }
         
+        template<typename Client>
+        size_t apply( Client const& client ) const
+        {
+            for ( auto const& agent : agents_ )
+            {
+                client( agent );
+            }
+            return agents_.size();
+        }
+        
     private:
         void add_title( std::string const& title )
         {

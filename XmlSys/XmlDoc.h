@@ -36,6 +36,12 @@ namespace XmlSys
             handler( xmlDoc_ );
         }
         
+        template<typename Handler>
+        void process_document( Handler const& handler ) const
+        {
+            handler( xmlDoc_ );
+        }
+        
         struct Throw
         : public std::exception
         {
@@ -138,6 +144,12 @@ namespace XmlSys
             handler( root_ );
         }
         
+        template<typename Handler>
+        void process_root( Handler const& handler ) const
+        {
+            handler( root_ );
+        }
+        
         std::ostream& stream( std::ostream& os ) const
         {
             root_.print( os );
@@ -163,12 +175,13 @@ namespace XmlSys
             { return set_value( XpathAgent(query), target ); }
         
         template<typename Inserter>
-        size_t into_list( XpathAgent const& agent, Inserter& inserter ) const
+        size_t into_list( XpathAgent const& agent, Inserter inserter ) const
             { return agent( root_, inserter ); }
         template<typename Inserter>
-        size_t into_list( std::string const& query, Inserter& inserter ) const
+        size_t into_list( std::string const& query, Inserter inserter ) const
             { return into_list( XpathAgent(query), inserter ); }
         
+        // generic operations
         template<typename Handler>
         size_t apply( XpathAgent const& agent, Handler& handler ) const
             { return agent.apply( root_, handler ); }
@@ -188,6 +201,28 @@ namespace XmlSys
             { return agent.apply_raw( root_, handler ); }
         template<typename Handler>
         size_t apply_raw( std::string const& query, Handler& handler ) const
+            { return apply_raw( XpathAgent(query), handler ); }
+        
+        // const handler variants       
+        template<typename Handler>
+        size_t apply( XpathAgent const& agent, Handler const& handler ) const
+            { return agent.apply( root_, handler ); }
+        template<typename Handler>
+        size_t apply( std::string const& query, Handler const& handler ) const
+            { return apply( XpathAgent(query), handler ); }
+            
+        template<typename Handler>
+        size_t apply( XpathAgent const& agent, Handler const& handler, bool /*tag*/ ) const
+            { return agent.apply( root_, handler, true ); }
+        template<typename Handler>
+        size_t apply( std::string const& query, Handler const& handler, bool /*tag*/  ) const
+            { return apply( XpathAgent(query), handler, true ); }
+        
+        template<typename Handler>
+        size_t apply_raw( XpathAgent const& agent, Handler const& handler ) const
+            { return agent.apply_raw( root_, handler ); }
+        template<typename Handler>
+        size_t apply_raw( std::string const& query, Handler const& handler ) const
             { return apply_raw( XpathAgent(query), handler ); }
             
     private:

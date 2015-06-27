@@ -170,7 +170,41 @@ namespace XmlSys
             }
             return _xpset.size();           
         }
+        
+        // const handler variants
+        template <typename Handler>
+        size_t apply( Xml_Node const& root, Handler const& handler ) const
+        {
+            Xpath_NodeSet       _xpset(root.select_nodes( xpath_.c_str() ));
+            for ( auto const& xpnode : _xpset )
+            {
+                handler( xpnode.node() );
+            }
+            return _xpset.size();           
+        }
 
+        template <typename Handler>
+        size_t apply( Xml_Node const& root, Handler const& handler, bool /* discriminator */ ) const
+        {
+            Xpath_NodeSet       _xpset(root.select_nodes( xpath_.c_str() ));
+            for ( auto const& xpnode : _xpset )
+            {
+                handler( xpnode.attribute() );
+            }
+            return _xpset.size();           
+        }
+
+        template <typename Handler>
+        size_t apply_raw( Xml_Node const& root, Handler const& handler ) const
+        {
+            Xpath_NodeSet       _xpset(root.select_nodes( xpath_.c_str() ));
+            for ( auto const& xpnode : _xpset )
+            {
+                handler( xpnode );
+            }
+            return _xpset.size();           
+        }
+        
     private:
         std::string const extract_( Xpath_Node const& xpnode ) const
         {
