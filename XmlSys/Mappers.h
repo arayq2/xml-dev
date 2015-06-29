@@ -132,10 +132,10 @@ namespace XmlSys
 
         bool operator() ( std::istream& input, std::string const& label )
         {
-            using Inserter = Inserter<Writer<Target> >;
-
             return Loader(label)( input, [&]( XmlDoc const& doc ) -> void 
             {
+                using Inserter = Inserter<Writer<Target> >;
+
                 Writer<Target>      _writer(target_, label);
                 if ( doc.into_list( agent_, Inserter(_writer) ) == 0 )
                 {
@@ -169,7 +169,7 @@ namespace XmlSys
         {
             return Loader(label)( input, [&]( XmlDoc const& doc ) -> void 
             {
-                doc.apply( context, std::bind( mapper_, std::placeholders::_1, label ) );
+                doc.apply( context, [&]( Xml_Node const& root ) -> void { mapper_( root, label ); } );
             } );
         }
         
@@ -177,7 +177,7 @@ namespace XmlSys
         {
             return Loader(label)( input, [&]( XmlDoc const& doc ) -> void
             {
-                doc.process_root( std::bind( mapper_, std::placeholders::_1, label ) );
+                doc.process_root( [&]( Xml_Node const& root ) -> void { mapper_( root, label ); } );
             } );
         }
         
