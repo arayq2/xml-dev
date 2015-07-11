@@ -104,7 +104,7 @@ namespace XmlSys
             {
                 try
                 {
-                    handler( XmlDoc(input) );
+                    handler( XmlDoc(input), label_ );
                     return true;
                 }
                 catch ( DocBase::Throw& ex )
@@ -132,18 +132,20 @@ namespace XmlSys
 
         bool operator() ( std::istream& input, std::string const& label )
         {
-            return Loader(label)( input, [&]( XmlDoc const& doc ) -> void 
-            {
-                using Inserter = Inserter<Writer<Target> >;
-
-                Writer<Target>      _writer(target_, label);
-                if ( doc.into_list( agent_, Inserter(_writer) ) == 0 )
-                {
-                    _writer(); // no data
-                }
-            } );
+            return Loader(label)( input, *this );
         }
-            
+        
+        void operator() ( XmlDoc const& doc, std::string const& label )  const
+        {
+            using Inserter = Inserter<Writer<Target> >;
+
+            Writer<Target>      _writer(target_, label);
+            if ( doc.into_list( agent_, Inserter(_writer) ) == 0 )
+            {
+                _writer(); // no data
+            }
+        }
+        
     private:
         XpathAgent const    agent_;
         Target&             target_;
@@ -163,25 +165,32 @@ namespace XmlSys
             return *this;
         }
         
+        void operator() ( XmlDoc const& doc, std::string const& label, std::string const& context ) const
+        {
+            doc.apply( context, [&]( Xml_Node const& root ) -> void { mapper_( root, label ); } );
+        }
+        
+        void operator() ( XmlDoc const& doc, std::string const& label ) const
+        {
+            doc.process_root( [&]( Xml_Node const& root ) -> void { mapper_( root, label ); } );
+        }
+        
         using Loader = SimpleLoader<ErrorPolicy>;
 
         bool operator() ( std::istream& input, std::string const& label, std::string const& context ) const
         {
-            return Loader(label)( input, [&]( XmlDoc const& doc ) -> void 
+            return Loader(label)( input, [&]( XmlDoc const& doc, std::string const& label ) -> void
             {
-                doc.apply( context, [&]( Xml_Node const& root ) -> void { mapper_( root, label ); } );
+                (*this)( doc, label, context );
             } );
         }
         
         bool operator() ( std::istream& input, std::string const& label ) const
         {
-            return Loader(label)( input, [&]( XmlDoc const& doc ) -> void
-            {
-                doc.process_root( [&]( Xml_Node const& root ) -> void { mapper_( root, label ); } );
-            } );
+            return Loader(label)( input, *this );
         }
         
-    private:
+   private:
         struct Mapper
         {
             Mapper(AgentSet const& agents, Target& target)
