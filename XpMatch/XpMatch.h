@@ -4,12 +4,7 @@
 #include "OutputMethods.h"
 #include "XmlSys/Mappers.h"
 #include "Utility/FileListProcessor.h"
-
-#include <boost/program_options.hpp>
-
-namespace po = boost::program_options;
-#define OPTION_PRESENT(V,S)     (V.count( S ) != 0)
-#define OPTION_ABSENT(V,S)      (V.count( S ) == 0)
+#include "Utility/ProgramOptions.h"
 
     class XpMatch
     {
@@ -61,6 +56,7 @@ namespace po = boost::program_options;
             _input.add_options()
                 ( "listfile,l", po::value<std::string>(&listfile_), "list of files filename" )
                 ( "directory,d", po::value<std::string>(&directory_), "directory for files (default .)" )
+				( "readxml,r", "read xml content from STDIN")
                 ;
             po::options_description         _output("Format (output) options [Note: -q and -s are mutually exclusive]");
             _output.add_options()
@@ -177,6 +173,12 @@ namespace po = boost::program_options;
         template<typename Client>
         void dispatch( Client& client ) const
         {
+			if ( OPTION_PRESENT(vm_, "readxml") )
+			{
+				client( std::cin, "STDIN" );
+				return;
+			}
+			
             Utility::FileListProcessor<Client>      _reader(client, directory_);
             
             if ( OPTION_PRESENT(vm_, "listfile") )
@@ -190,7 +192,7 @@ namespace po = boost::program_options;
             }
             else
             {
-                std::cerr << "[Reading <STDIN> for list of files...]" << std::endl;
+                //std::cerr << "[Reading <STDIN> for list of files...]" << std::endl;
                 _reader.do_stream( std::cin );
             }
         }
