@@ -26,6 +26,7 @@ Grep mode options:
 Source (input) options:
   -l [ --listfile ] arg  list of files filename
   -d [ --directory ] arg directory for files (default .)
+  -r [ --readxml ]       read xml content from STDIN
 
 Format (output) options [Note: -q and -s are mutually exclusive]:
   -n [ --noheader ]      suppress header row (or no titles in grep mode)
@@ -61,7 +62,8 @@ XML files to be processed can be specified as command line arguments;
 or as the contents of a file, one name per line, with the -l option; 
 or be passed in through STDIN, one name per line.  To save typing, the 
 -d option can specify a directory relative to which the file names will 
-be interpreted as file paths. 
+be interpreted as file paths.  A single source xml file can also be 
+read in through STDIN with the -r option.
 
 The Xpath expressions handled are not fully general.  In particular, 
 disjunctions of the form this-element-text-or-that-attribute-value 
