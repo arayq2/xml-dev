@@ -56,7 +56,7 @@
             _input.add_options()
                 ( "listfile,l", po::value<std::string>(&listfile_), "list of files filename" )
                 ( "directory,d", po::value<std::string>(&directory_), "directory for files (default .)" )
-				( "readxml,r", "read xml content from STDIN")
+                ( "readxml,r", "read xml content from STDIN")
                 ;
             po::options_description         _output("Format (output) options [Note: -q and -s are mutually exclusive]");
             _output.add_options()
@@ -173,12 +173,12 @@
         template<typename Client>
         void dispatch( Client& client ) const
         {
-			if ( OPTION_PRESENT(vm_, "readxml") )
-			{
-				client( std::cin, "STDIN" );
-				return;
-			}
-			
+            if ( OPTION_PRESENT(vm_, "readxml") )
+            {
+                client( std::cin, "STDIN" );
+                return;
+            }
+            
             Utility::FileListProcessor<Client>      _reader(client, directory_);
             
             if ( OPTION_PRESENT(vm_, "listfile") )
