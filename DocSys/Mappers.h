@@ -17,8 +17,8 @@
      */
 
 namespace DocSys
-{   
-    namespace 
+{
+    namespace
     {
         struct LoadError
         {
@@ -29,8 +29,8 @@ namespace DocSys
         };
 
         /**
-         * Writer.  Local class to encapsulate TargetMethods and 
-         * pair "begin, end" operations in RAII fashion.
+         * Writer.  Local class to encapsulate TargetMethods  
+         * and pair "begin, end" operations in RAII fashion.
          */
         template<typename Target>
         class Writer
@@ -60,7 +60,7 @@ namespace DocSys
             }
 
         private:
-            Target&     target_;        
+            Target&     target_;
         };
 
         /**
@@ -83,7 +83,7 @@ namespace DocSys
             Inserter& operator= ( T& item )
             {
                 writer_( item );
-                return *this; 
+                return *this;
             }
 
         private:
@@ -259,7 +259,7 @@ namespace DocSys
                 Writer<Target>  _writer(target_, label);
                 for ( auto const& _agent : agents_ )
                 {
-                    // this Agent interface should select at most one value. 
+                    // this Agent interface should select at most one value.
                     if ( !Methods::value( _agent, node, _writer ) )
                     {
                         _writer(); // no data
@@ -272,4 +272,3 @@ namespace DocSys
         }   mapper_;
     };
 } // namespace DocSys
-    

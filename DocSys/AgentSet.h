@@ -24,7 +24,7 @@ namespace DocSys
         {
             // ignore blanks and comments
             if ( line.length() == 0 or line[0] == '#' )
-            { 
+            {
                 return false;
             }
             // ignore leading whitespace
@@ -115,7 +115,7 @@ namespace DocSys
             {
                 Methods::add_item( client_, title, path );
             });
-                        
+
             if ( parser_( line, index_, _lambda ) )
             {
                 ++index_;
@@ -126,7 +126,7 @@ namespace DocSys
         FormatParser    parser_;
         int             index_;
     };
-    
+
     template<typename Agent>
     class AgentSet
     {
@@ -195,5 +195,5 @@ namespace DocSys
         }
 
     };
-    
+
 } // namespace DocSys

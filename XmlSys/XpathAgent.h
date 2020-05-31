@@ -135,7 +135,7 @@ namespace XmlSys
             }
             else
             if ( test_ ) { *inserter = TEST_NO; }
-            return _xpset.size();             
+            return _xpset.size();
         }
 
         // generic operations on members of result sets.
