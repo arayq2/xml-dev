@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "OutputMethods.h"
-#include "DocSys/Mappers.h"
 #include "XmlSys/XmlDoc.h"
+#include "DocSys/OutputMethods.h"
+#include "DocSys/Mappers.h"
 #include "Utility/FileListProcessor.h"
 #include "Utility/ProgramOptions.h"
 
