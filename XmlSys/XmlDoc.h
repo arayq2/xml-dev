@@ -159,7 +159,8 @@ namespace XmlSys
         /**
          * wrap XpathAgent functionality
          */
-        using Node = Xml_Node;
+        using Node  = Xml_Node;
+        using Agent = XpathAgent;
 
         bool has_value( XpathAgent const& agent ) const 
             { return agent.probe( root_ ); }
@@ -177,10 +178,10 @@ namespace XmlSys
             { return set_value( XpathAgent(query), target ); }
         
         template<typename Inserter>
-        size_t operator()( XpathAgent const& agent, Inserter inserter ) const
+        size_t into_list( XpathAgent const& agent, Inserter inserter ) const
             { return agent( root_, inserter ); }
         template<typename Inserter>
-        size_t operator()( std::string const& query, Inserter inserter ) const
+        size_t into_list( std::string const& query, Inserter inserter ) const
             { return operator()( XpathAgent(query), inserter ); }
         
         // generic operations

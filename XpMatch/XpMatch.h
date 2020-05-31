@@ -3,7 +3,6 @@
 
 #include "OutputMethods.h"
 #include "DocSys/Mappers.h"
-#include "XmlSys/XpathAgent.h"
 #include "XmlSys/XmlDoc.h"
 #include "Utility/FileListProcessor.h"
 #include "Utility/ProgramOptions.h"
@@ -154,7 +153,7 @@ namespace XmlSys
         void do_table( DocSys::AgentSet<XpathAgent> const& agents, Output& output ) const
         {
             // associate agent set with output method
-            DocSys::AgentSetMapper<XmlDoc, XpathAgent, Output>  _mapper(agents, output);
+            DocSys::AgentSetMapper<XmlDoc, Output>  _mapper(agents, output);
             
             if ( OPTION_ABSENT(vm_, "noheader") )
             {
@@ -213,7 +212,7 @@ namespace XmlSys
             // configure agent
             XpathAgent                  _agent(xpath_);
             // associate agent with output method
-            DocSys::AgentMapper<XmlDoc, XpathAgent, Utility::PrefixedOutput>
+            DocSys::AgentMapper<XmlDoc, Utility::PrefixedOutput>
                                         _mapper(_agent, _output);
             // run for input options
             dispatch( _mapper );

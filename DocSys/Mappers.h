@@ -27,7 +27,7 @@ namespace DocSys
                 std::cerr << msg << std::endl;
             }
         };
-        
+
         /**
          * Writer.  Local class to encapsulate TargetMethods and 
          * pair "begin, end" operations in RAII fashion.
@@ -37,28 +37,28 @@ namespace DocSys
         {
         public:
             using Methods = TargetMethods<Target>;
- 
+
             Writer(Target& target, std::string const& label)
             : target_(target)
             {
                 Methods::label( target_, label );
             }
-            
+
             ~Writer()
             {
                 Methods::end( target_ );
             }
-            
-            void operator() ( std::string const& item ) const
+
+            void operator()( std::string const& item ) const
             {
                 Methods::item( target_, item );
             }
-            
-            void operator() () const
+
+            void operator()() const
             {
                 Methods::no_data( target_ );
             }
-        
+
         private:
             Target&     target_;        
         };
@@ -74,18 +74,18 @@ namespace DocSys
             Inserter(Writer& writer)
             : writer_(writer)
             {}
-            
+
             Inserter& operator*  ()    { return *this; }
             Inserter& operator++ ()    { return *this; }
             Inserter& operator++ (int) { return *this; }
-            
+
             template<typename T>
             Inserter& operator= ( T& item )
             {
                 writer_( item );
                 return *this; 
             }
-            
+
         private:
             Writer&    writer_;
         };
@@ -97,7 +97,7 @@ namespace DocSys
             SimpleLoader(std::string const& label)
             : label_(label)
             {}
-            
+
             template<typename Handler>
             bool operator()( std::istream& input, Handler const& handler ) const
             {
@@ -112,16 +112,54 @@ namespace DocSys
                     return false;
                 }
             }
-        
+
         private:
             std::string const   label_;
         };
-    }
-    
-    template<typename Document, typename Agent, typename Target, typename ErrorPolicy = LoadError>
+    } // namespace
+
+    template<typename Document>
+    struct MapperMethods
+    {
+        template<typename Action>
+        static void
+        apply( Document const& doc, std::string const& context, Action&& action )
+        {
+            doc.apply( context, std::forward<Action>(action) );
+        }
+
+        template<typename Action>
+        static void
+        process_root( Document const& doc, Action&& action )
+        {
+            doc.process_root( std::forward<Action>(action) );
+        }
+
+        using Agent = typename Document::Agent;
+
+        template<typename Action>
+        static size_t
+        into_list( Document const& doc, Agent const& agent, Action&& action )
+        {
+            return doc.into_list( agent, std::forward<Action>(action) );
+        }
+
+        using Node = typename Document::Node;
+
+        template<typename Action>
+        static bool
+        value( Agent const& agent, Node const& node, Action&& action )
+        {
+            return agent.value( node, std::forward<Action>(action) );
+        }
+    };
+
+    template<typename Document, typename Target, typename Methods = MapperMethods<Document>, typename ErrorPolicy = LoadError>
     class AgentMapper
     {
-    public:     
+    public:
+        using Agent = typename Document::Agent;
+
         AgentMapper(Agent const& agent, Target& target)
         : agent_(agent)
         , target_(target)
@@ -131,50 +169,50 @@ namespace DocSys
         {
             return SimpleLoader<Document, ErrorPolicy>(label)( input, *this );
         }
-        
+
         void operator()( Document const& doc, std::string const& label )  const
         {
             using Inserter = Inserter<Writer<Target> >;
 
             Writer<Target>      _writer(target_, label);
-            if ( doc( agent_, Inserter(_writer) ) == 0 )
+            if ( Methods::into_list( doc, agent_, Inserter(_writer) ) == 0 )
             {
                 _writer(); // no data
             }
         }
-        
+
     private:
         Agent const agent_;
         Target&     target_;
     };
-    
-    template<typename Document, typename Agent, typename Target, typename ErrorPolicy = LoadError>
+
+    template<typename Document, typename Target, typename Methods = MapperMethods<Document>, typename ErrorPolicy = LoadError>
     class AgentSetMapper
     {
     public:
+        using Node   = typename Document::Node;
+        using Agent  = typename Document::Agent;
+        using Loader = SimpleLoader<Document, ErrorPolicy>;
+
         AgentSetMapper(AgentSet<Agent> const& agents, Target& target)
         : mapper_(agents, target)
         {}
-        
+
         AgentSetMapper const& header() const
         {
             mapper_.header();
             return *this;
         }
-        
+
         void operator()( Document const& doc, std::string const& label, std::string const& context ) const
         {
-            using Node = typename Document::Node;
-            doc.apply( context, [&]( Node const& root ) -> void { mapper_( root, label ); } );
-        }
-        
-        void operator()( Document const& doc, std::string const& label ) const
-        {
-            using Node = typename Document::Node;
-            doc.process_root( [&]( Node const& root ) -> void { mapper_( root, label ); } );
+            Methods::apply( doc, context, [&]( Node const& root ) -> void { mapper_( root, label ); } );
         }
 
-        using Loader = SimpleLoader<Document, ErrorPolicy>;
+        void operator()( Document const& doc, std::string const& label ) const
+        {
+            Methods::process_root( doc, [&]( Node const& root ) -> void { mapper_( root, label ); } );
+        }
 
         bool operator()( std::istream& input, std::string const& label, std::string const& context ) const
         {
@@ -183,12 +221,12 @@ namespace DocSys
                 operator()( doc, label, context );
             } );
         }
-        
+
         bool operator()( std::istream& input, std::string const& label ) const
         {
             return Loader(label)( input, *this );
         }
-        
+
    private:
         struct Mapper
         {
@@ -196,10 +234,10 @@ namespace DocSys
             : agents_(agents)
             , target_(target)
             {}
-            
+
             // used to generate header row
             template<typename Iterator>
-            void operator() ( Iterator begin, Iterator const end ) const
+            void operator()( Iterator begin, Iterator const end ) const
             {
                 if ( begin != end )
                 {
@@ -215,24 +253,23 @@ namespace DocSys
             {
                 agents_.headers( *this );
             }
-            
-            template<typename Node>
-            void operator() ( Node const& node, std::string const& label ) const
+
+            void operator()( Node const& node, std::string const& label ) const
             {
                 Writer<Target>  _writer(target_, label);
-                for ( auto const& agent : agents_ )
+                for ( auto const& _agent : agents_ )
                 {
                     // this Agent interface should select at most one value. 
-                    if ( !agent.value( node, _writer ) )
+                    if ( !Methods::value( _agent, node, _writer ) )
                     {
                         _writer(); // no data
                     }
                 }
             }
-            
+
             AgentSet<Agent> const&  agents_;
             Target&                 target_;
-        }               mapper_;
+        }   mapper_;
     };
 } // namespace DocSys
     
