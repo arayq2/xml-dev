@@ -137,7 +137,7 @@ namespace DocSys
             using Inserter = Inserter<Writer<Target> >;
 
             Writer<Target>      _writer(target_, label);
-            if ( doc.into_list( agent_, Inserter(_writer) ) == 0 )
+            if ( doc( agent_, Inserter(_writer) ) == 0 )
             {
                 _writer(); // no data
             }

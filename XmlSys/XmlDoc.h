@@ -177,11 +177,11 @@ namespace XmlSys
             { return set_value( XpathAgent(query), target ); }
         
         template<typename Inserter>
-        size_t into_list( XpathAgent const& agent, Inserter inserter ) const
+        size_t operator()( XpathAgent const& agent, Inserter inserter ) const
             { return agent( root_, inserter ); }
         template<typename Inserter>
-        size_t into_list( std::string const& query, Inserter inserter ) const
-            { return into_list( XpathAgent(query), inserter ); }
+        size_t operator()( std::string const& query, Inserter inserter ) const
+            { return operator()( XpathAgent(query), inserter ); }
         
         // generic operations
         template<typename Handler>
