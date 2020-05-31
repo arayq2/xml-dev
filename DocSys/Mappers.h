@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include "DocSys/AgentSet.h"
-#include "DocSys/TargetMethods.h"
+#include "AgentSet.h"
+#include "TargetMethods.h"
 
 #include <iostream>
 #include <fstream>
@@ -121,23 +121,23 @@ namespace DocSys
     template<typename Document>
     struct MapperMethods
     {
-        template<typename Action>
-        static void
-        apply( Document const& doc, std::string const& context, Action&& action )
-        {
-            doc.apply( context, std::forward<Action>(action) );
-        }
-
-        template<typename Action>
+        template<typename Action>  // void(Node const&)
         static void
         process_root( Document const& doc, Action&& action )
         {
             doc.process_root( std::forward<Action>(action) );
         }
 
+        template<typename Action>  // void(Node const&)
+        static void
+        apply( Document const& doc, std::string const& context, Action&& action )
+        {
+            doc.apply( context, std::forward<Action>(action) );
+        }
+
         using Agent = typename Document::Agent;
 
-        template<typename Action>
+        template<typename Action>  // size_t(Node const&, Inserter&)
         static size_t
         into_list( Document const& doc, Agent const& agent, Action&& action )
         {
@@ -146,7 +146,7 @@ namespace DocSys
 
         using Node = typename Document::Node;
 
-        template<typename Action>
+        template<typename Action> // bool(Node const&, Writer&)
         static bool
         value( Agent const& agent, Node const& node, Action&& action )
         {

@@ -1,8 +1,8 @@
 
 #pragma once
 
+#include "TargetMethods.h"
 #include "Utility/LineOutput.h"
-#include "DocSys/TargetMethods.h"
 
     /**
      * Implementations of XmlSys::TargetMethods "interface" (static polymorphism).
