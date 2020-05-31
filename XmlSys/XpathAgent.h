@@ -6,6 +6,9 @@
 #include <functional>
 #include <string>
 
+#define TEST_YES    "[yes]"
+#define TEST_NO     "[no]"
+
 namespace XmlSys
 {
     typedef pugi::xml_node          Xml_Node;
@@ -33,41 +36,41 @@ namespace XmlSys
             : xpath.find_first_of( "[]/=", _lastPos ) == std::string::npos
             ;
         }
-        
-        static std::string const fromAttribute( Xpath_Node const& xpnode )
-        {
-            return xpnode.attribute().as_string();
-        }
-        
-        static std::string const fromNode( Xpath_Node const& xpnode )
-        {
-            return xpnode.node().child_value();
-        }
-        
+
         explicit
         XpathAgent(std::string const& xpath)
+        : XpathAgent(xpath[0] == '?', xpath[0] == '?' ? xpath.substr( 1 ) : xpath)
+        {}
+
+        XpathAgent(bool test, std::string const& xpath)
         : xpath_(xpath)
         , fromAtt_(selectsAttribute( xpath ))
+        , test_(test)
         {}
-        
+
         XpathAgent(std::string const& xpath, bool fromAtt)
+        : XpathAgent(xpath[0] == '?', (xpath[0] == '?' ? xpath.substr( 1 ) : xpath), fromAtt)
+        {}
+
+        XpathAgent(bool test, std::string const& xpath, bool fromAtt)
         : xpath_(xpath)
         , fromAtt_(fromAtt)
+        , test_(test)
         {}
 
         bool probe( Xml_Node const& root ) const 
         {
             return root.select_single_node( xpath_.c_str() );
         }
-        
+
         // canonical operation: extract string from first eligible node.
-        std::string const operator () ( Xml_Node const& root ) const
+        std::string const operator()( Xml_Node const& root ) const
         {
             Xpath_Node      _xpnode(root.select_single_node( xpath_.c_str() ));
-            return _xpnode ? extract_( _xpnode ) : "";
+            return _xpnode ? extract_( _xpnode ) : test_ ? TEST_NO : "";
         }
         // COM style
-        bool operator () ( Xml_Node const& root, std::string& target ) const
+        bool operator()( Xml_Node const& root, std::string& target ) const
         {
             Xpath_Node      _xpnode(root.select_single_node( xpath_.c_str() ));
             if ( _xpnode )
@@ -77,7 +80,7 @@ namespace XmlSys
             }
             return false;
         }
-        
+
         template<typename Handler>
         bool value( Xml_Node const& root, Handler& handler ) const
         {
@@ -92,7 +95,7 @@ namespace XmlSys
         }
 
         template<typename Handler>
-        void node( Xml_Node const& root, Handler& handler ) const
+        bool node( Xml_Node const& root, Handler& handler ) const
         {
             Xpath_Node      _xpnode(root.select_single_node( xpath_.c_str() ));
             if ( _xpnode )
@@ -105,7 +108,7 @@ namespace XmlSys
         }
 
         template<typename Handler>
-        void attribute( Xml_Node const& root, Handler& handler ) const
+        bool attribute( Xml_Node const& root, Handler& handler ) const
         {
             Xpath_Node      _xpnode(root.select_single_node( xpath_.c_str() ));
             if ( _xpnode )
@@ -119,24 +122,22 @@ namespace XmlSys
 
         // pass extracted strings from all eligible nodes to an inserter
         template <typename Inserter>
-        size_t operator () ( Xml_Node const& root, Inserter inserter ) const
+        size_t operator()( Xml_Node const& root, Inserter inserter ) const
         {
             Xpath_NodeSet       _xpset(root.select_nodes( xpath_.c_str() ));
             if ( _xpset.size() > 0 )
             {
-                if ( fromAtt_ )
-                {
-                    std::transform( _xpset.begin(), _xpset.end(), inserter, fromAttribute );
-                }
-                else
-                {
-                    std::transform( _xpset.begin(), _xpset.end(), inserter, fromNode ); 
-                }
+                std::transform( _xpset.begin(), _xpset.end(), inserter,
+                    [this]( Xpath_Node const& xpnode ) -> std::string const
+                    {
+                        return extract_( xpnode );
+                    } );
             }
-            return _xpset.size();
-             
+            else
+            if ( test_ ) { *inserter = TEST_NO; }
+            return _xpset.size();             
         }
-        
+
         // generic operations on members of result sets.
         template <typename Handler>
         size_t apply( Xml_Node const& root, Handler& handler ) const
@@ -146,7 +147,7 @@ namespace XmlSys
             {
                 handler( xpnode.node() );
             }
-            return _xpset.size();           
+            return _xpset.size();
         }
 
         template <typename Handler>
@@ -170,7 +171,7 @@ namespace XmlSys
             }
             return _xpset.size();           
         }
-        
+
         // const handler variants
         template <typename Handler>
         size_t apply( Xml_Node const& root, Handler const& handler ) const
@@ -204,15 +205,16 @@ namespace XmlSys
             }
             return _xpset.size();           
         }
-        
+
     private:
         std::string const extract_( Xpath_Node const& xpnode ) const
         {
-            return fromAtt_ ? xpnode.attribute().as_string() : xpnode.node().child_value(); 
+            return test_ ? TEST_YES : fromAtt_ ? xpnode.attribute().as_string() : xpnode.node().child_value();
         }
-        
+
         std::string     xpath_;
         bool            fromAtt_;
+        bool            test_;
     };
     
 } // namespace XmlSys

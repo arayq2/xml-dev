@@ -2,10 +2,14 @@
 #pragma once
 
 #include "OutputMethods.h"
-#include "XmlSys/Mappers.h"
+#include "DocSys/Mappers.h"
+#include "XmlSys/XpathAgent.h"
+#include "XmlSys/XmlDoc.h"
 #include "Utility/FileListProcessor.h"
 #include "Utility/ProgramOptions.h"
 
+namespace XmlSys
+{
     class XpMatch
     {
     public: 
@@ -101,7 +105,7 @@
         {
             if ( OPTION_PRESENT(vm_, "column") )
             {
-                do_output( XmlSys::AgentSet(columns_.begin(), columns_.end()) );
+                do_output( DocSys::AgentSet<XpathAgent>(columns_.begin(), columns_.end()) );
             }
             else
             if ( OPTION_PRESENT(vm_, "table") )
@@ -109,7 +113,7 @@
                 std::ifstream       _specs(table_.c_str());
                 if ( _specs )
                 {
-                    do_output( XmlSys::AgentSet(_specs) );
+                    do_output( DocSys::AgentSet<XpathAgent>(_specs) );
                 }
                 else
                 {
@@ -128,7 +132,7 @@
         }
         
         // set output style for table mode
-        void do_output( XmlSys::AgentSet const& agents ) const
+        void do_output( DocSys::AgentSet<XpathAgent> const& agents ) const
         {
             if ( OPTION_PRESENT(vm_, "quoted") )
             {
@@ -147,10 +151,10 @@
         }
         
         template<typename Output>
-        void do_table( XmlSys::AgentSet const& agents, Output& output ) const
+        void do_table( DocSys::AgentSet<XpathAgent> const& agents, Output& output ) const
         {
             // associate agent set with output method
-            XmlSys::AgentSetMapper<Output>  _mapper(agents, output);
+            DocSys::AgentSetMapper<XmlDoc, XpathAgent, Output>  _mapper(agents, output);
             
             if ( OPTION_ABSENT(vm_, "noheader") )
             {
@@ -207,13 +211,13 @@
                 .notitle( OPTION_PRESENT(vm_, "noheader") )
                 ;
             // configure agent
-            XmlSys::XpathAgent          _agent(xpath_);
+            XpathAgent                  _agent(xpath_);
             // associate agent with output method
-            XmlSys::AgentMapper<Utility::PrefixedOutput>
+            DocSys::AgentMapper<XmlDoc, XpathAgent, Utility::PrefixedOutput>
                                         _mapper(_agent, _output);
             // run for input options
             dispatch( _mapper );
         }
     };
-    
 
+} // namespace XmlSys

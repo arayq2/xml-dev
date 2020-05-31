@@ -159,6 +159,8 @@ namespace XmlSys
         /**
          * wrap XpathAgent functionality
          */
+        using Node = Xml_Node;
+
         bool has_value( XpathAgent const& agent ) const 
             { return agent.probe( root_ ); }
         bool has_value( std::string const& xpath ) const

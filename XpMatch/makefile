@@ -4,11 +4,12 @@ CFLAGS=-c -std=c++11 -Wall -I.. -I../pugixml
 LDFLAGS=
 LIBS=-lboost_program_options
 
-VPATH=../Utility:../XmlSys:../pugixml
+VPATH=../Utility:../DocSys:../XmlSys:../pugixml
 
 UTILITY=FileListProcessor.h LineOutput.h
-XMLSYS=XpathAgent.h XmlDoc.h AgentSet.h TargetMethods.h Mappers.h
-HEADERS=$(UTILITY) $(XMLSYS)
+DOCSYS=AgentSet.h TargetMethods.h Mappers.h
+XMLSYS=XpathAgent.h XmlDoc.h
+HEADERS=$(UTILITY) $(DOCSYS) $(XMLSYS)
 
 SOURCES=XpMatch.cpp ../pugixml/pugixml.cpp
 OBJECTS=$(SOURCES:.cpp=.o)

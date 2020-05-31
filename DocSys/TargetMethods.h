@@ -1,7 +1,7 @@
 
 #pragma once
 
-namespace XmlSys
+namespace DocSys
 {
     template<typename Target>
     class TargetMethods
@@ -14,5 +14,5 @@ namespace XmlSys
     }
 #endif
     ;
-} // namespace Utility
+} // namespace DocSys
 

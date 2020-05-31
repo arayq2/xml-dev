@@ -1,9 +1,8 @@
 
 #pragma once
 
-#include "XmlSys/XmlDoc.h"
-#include "XmlSys/AgentSet.h"
-#include "XmlSys/TargetMethods.h"
+#include "DocSys/AgentSet.h"
+#include "DocSys/TargetMethods.h"
 
 #include <iostream>
 #include <fstream>
@@ -11,13 +10,13 @@
 
     /**
      * Mappers.h.
-     * Associates an XpathAgent or a collection of XpathAgents with
-     * a target or sink for the values found in an input XML stream. 
+     * Associates an Agent or a collection of Agents with a target or 
+     * sink for the values found in an input document stream (e.g. XML). 
      * The target is addressed via a policy class (i.e. an interface)
      * to minimize assumptions about implementation.
      */
 
-namespace XmlSys
+namespace DocSys
 {   
     namespace 
     {
@@ -91,7 +90,7 @@ namespace XmlSys
             Writer&    writer_;
         };
 
-        template<typename ErrorPolicy = LoadError>
+        template<typename Document, typename ErrorPolicy = LoadError>
         class SimpleLoader
         {
         public:
@@ -100,14 +99,14 @@ namespace XmlSys
             {}
             
             template<typename Handler>
-            bool operator() ( std::istream& input, Handler const& handler ) const
+            bool operator()( std::istream& input, Handler const& handler ) const
             {
                 try
                 {
-                    handler( XmlDoc(input), label_ );
+                    handler( Document(input), label_ );
                     return true;
                 }
-                catch ( DocBase::Throw& ex )
+                catch ( typename Document::Throw& ex )
                 {
                     ErrorPolicy().on_error( label_ + ": " + ex.what() );
                     return false;
@@ -119,23 +118,21 @@ namespace XmlSys
         };
     }
     
-    template<typename Target, typename ErrorPolicy = LoadError>
+    template<typename Document, typename Agent, typename Target, typename ErrorPolicy = LoadError>
     class AgentMapper
     {
     public:     
-        AgentMapper(XpathAgent const& agent, Target& target)
+        AgentMapper(Agent const& agent, Target& target)
         : agent_(agent)
         , target_(target)
         {}
 
-        using Loader = SimpleLoader<ErrorPolicy>;
-
-        bool operator() ( std::istream& input, std::string const& label )
+        bool operator()( std::istream& input, std::string const& label )
         {
-            return Loader(label)( input, *this );
+            return SimpleLoader<Document, ErrorPolicy>(label)( input, *this );
         }
         
-        void operator() ( XmlDoc const& doc, std::string const& label )  const
+        void operator()( Document const& doc, std::string const& label )  const
         {
             using Inserter = Inserter<Writer<Target> >;
 
@@ -147,15 +144,15 @@ namespace XmlSys
         }
         
     private:
-        XpathAgent const    agent_;
-        Target&             target_;
+        Agent const agent_;
+        Target&     target_;
     };
     
-    template<typename Target, typename ErrorPolicy = LoadError>
+    template<typename Document, typename Agent, typename Target, typename ErrorPolicy = LoadError>
     class AgentSetMapper
     {
     public:
-        AgentSetMapper(AgentSet const& agents, Target& target)
+        AgentSetMapper(AgentSet<Agent> const& agents, Target& target)
         : mapper_(agents, target)
         {}
         
@@ -165,27 +162,29 @@ namespace XmlSys
             return *this;
         }
         
-        void operator() ( XmlDoc const& doc, std::string const& label, std::string const& context ) const
+        void operator()( Document const& doc, std::string const& label, std::string const& context ) const
         {
-            doc.apply( context, [&]( Xml_Node const& root ) -> void { mapper_( root, label ); } );
+            using Node = typename Document::Node;
+            doc.apply( context, [&]( Node const& root ) -> void { mapper_( root, label ); } );
         }
         
-        void operator() ( XmlDoc const& doc, std::string const& label ) const
+        void operator()( Document const& doc, std::string const& label ) const
         {
-            doc.process_root( [&]( Xml_Node const& root ) -> void { mapper_( root, label ); } );
+            using Node = typename Document::Node;
+            doc.process_root( [&]( Node const& root ) -> void { mapper_( root, label ); } );
         }
-        
-        using Loader = SimpleLoader<ErrorPolicy>;
 
-        bool operator() ( std::istream& input, std::string const& label, std::string const& context ) const
+        using Loader = SimpleLoader<Document, ErrorPolicy>;
+
+        bool operator()( std::istream& input, std::string const& label, std::string const& context ) const
         {
-            return Loader(label)( input, [&]( XmlDoc const& doc, std::string const& label ) -> void
+            return Loader(label)( input, [&]( Document const& doc, std::string const& label ) -> void
             {
-                (*this)( doc, label, context );
+                operator()( doc, label, context );
             } );
         }
         
-        bool operator() ( std::istream& input, std::string const& label ) const
+        bool operator()( std::istream& input, std::string const& label ) const
         {
             return Loader(label)( input, *this );
         }
@@ -193,7 +192,7 @@ namespace XmlSys
    private:
         struct Mapper
         {
-            Mapper(AgentSet const& agents, Target& target)
+            Mapper(AgentSet<Agent> const& agents, Target& target)
             : agents_(agents)
             , target_(target)
             {}
@@ -217,22 +216,23 @@ namespace XmlSys
                 agents_.headers( *this );
             }
             
-            void operator() ( Xml_Node const& node, std::string const& label ) const
+            template<typename Node>
+            void operator() ( Node const& node, std::string const& label ) const
             {
                 Writer<Target>  _writer(target_, label);
-                agents_.apply( [&]( XpathAgent const& agent ) -> void 
+                for ( auto const& agent : agents_ )
                 {
-                    // this XpathAgent interface selects at most one value. 
+                    // this Agent interface should select at most one value. 
                     if ( !agent.value( node, _writer ) )
                     {
                         _writer(); // no data
                     }
-                } );
+                }
             }
             
-            AgentSet const&     agents_;
-            Target&             target_;
+            AgentSet<Agent> const&  agents_;
+            Target&                 target_;
         }               mapper_;
     };
-} // namespace XmlSys
+} // namespace DocSys
     

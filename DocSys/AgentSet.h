@@ -1,11 +1,11 @@
-
 #pragma once
-#include "XmlSys/XpathAgent.h"
 
+#include <string>
 #include <vector>
 #include <istream>
+#include <sstream>
 
-namespace XmlSys
+namespace DocSys
 {
     class FormatParser
     {
@@ -117,16 +117,17 @@ namespace XmlSys
         int             index_;
     };
     
+    template<typename Agent>
     class AgentSet
     {
     public:
-        friend class SetLoader<AgentSet>;
+        friend class SetLoader<AgentSet<Agent> >;
 
         AgentSet(std::istream& source, FormatParser const& parser = FormatParser())
         : header_()
         , agents_()
         {
-            SetLoader<AgentSet>(*this, parser)( source );
+            SetLoader<AgentSet<Agent> >(*this, parser)( source );
         }
         
         template<typename Iterator>
@@ -134,7 +135,7 @@ namespace XmlSys
         : header_()
         , agents_()
         {
-            SetLoader<AgentSet>(*this, parser)( begin, end );
+            SetLoader<AgentSet<Agent> >(*this, parser)( begin, end );
         }
         
         template<typename Handler>
@@ -163,20 +164,25 @@ namespace XmlSys
             return agents_.size();
         }
         
+        using const_iterator = typename std::vector<Agent>::const_iterator;
+        
+        const_iterator begin() const { return agents_.begin(); }
+        const_iterator end() const { return agents_.end(); }
+
     private:
         void add_title( std::string const& title )
         {
             header_.push_back( title );
         }
         
-        void operator() ( std::string const& title, std::string const& xpath )
+        void operator() ( std::string const& title, std::string const& path )
         {
             header_.push_back( title );
-            agents_.push_back( XpathAgent(xpath) );
+            agents_.push_back( Agent(path) );
         }
         
-        std::vector<std::string>        header_;
-        std::vector<XpathAgent>         agents_;
+        std::vector<std::string>    header_;
+        std::vector<Agent>          agents_;
     };
     
-} // namespace XmlSys
+} // namespace DocSys

@@ -58,6 +58,11 @@ will be output in a header row; or just '<expression>', in which case
 the header row will have a synthesized title of the form '[N]' where 
 N is the column number.
 
+Expressions can be prefixed with '?' only to test whether the target 
+exists.  The output will be "[yes]" or "[no]" appropriately.  This 
+can be useful to test for nodes that schematically will not have text 
+content (such as elements for grouping purposes).
+
 XML files to be processed can be specified as command line arguments;
 or as the contents of a file, one name per line, with the -l option; 
 or be passed in through STDIN, one name per line.  To save typing, the 
@@ -72,7 +77,4 @@ are NOT supported.
 Also, XML namespaces are not recognized, as the underlying parsing 
 engine (pugixml) does not support them in the version used.  Some may 
 deem this a flaw or even a bug; I consider it a feature.
-
-
-
 

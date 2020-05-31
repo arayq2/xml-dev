@@ -5,7 +5,7 @@
     {
         try
         {
-            XpMatch().run( ac, av );
+            XmlSys::XpMatch().run( ac, av );
             return 0;
         }
         catch ( std::exception& e )

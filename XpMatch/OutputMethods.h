@@ -2,13 +2,13 @@
 #pragma once
 
 #include "Utility/LineOutput.h"
-#include "XmlSys/TargetMethods.h"
+#include "DocSys/TargetMethods.h"
 
     /**
      * Implementations of XmlSys::TargetMethods "interface" (static polymorphism).
      */
 
-namespace XmlSys
+namespace DocSys
 {
     template<>
     struct TargetMethods<Utility::PrefixedOutput>
